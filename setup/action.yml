@@ -17,30 +17,42 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Set https proxy
-      shell: bash
-      run: |
-        export https_proxy="${{ inputs.proxy }}"
-        export no_proxy="${{ inputs.noproxy }}"
-        echo $https_proxy
-        echo $no_proxy
+    # - name: Set https proxy
+    #   shell: bash
+    #   run: |
+    #     export https_proxy="${{ inputs.proxy }}"
+    #     export no_proxy="${{ inputs.noproxy }}"
+    #     echo $https_proxy
+    #     echo $no_proxy
 
-    - name: Download gpg key and add apt repo
-      run: |
-        echo $(lsb_release -cs)
-        echo $https_proxy
-        echo $no_proxy
-        echo test
-        echo "${{ inputs.proxy }}"
-        echo "${{ inputs.noproxy }}"
-        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-      shell: bash
+    # - name: Download gpg key and add apt repo
+    #   run: |
+    #     echo $(lsb_release -cs)
+    #     echo $https_proxy
+    #     echo $no_proxy
+    #     echo test
+    #     echo "${{ inputs.proxy }}"
+    #     echo "${{ inputs.noproxy }}"
+    #     wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    #     echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+    #   shell: bash
 
     - name: Install Packer
-      run: apt update && apt install packer="${{ inputs.version }}"*
+      run: |
+        echo "set proxy"
+        export https_proxy="${{ inputs.proxy }}"
+        echo "set no_proxy"
+        export no_proxy="${{ inputs.noproxy }}"
+        echo "get gpg key"
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "add repo"
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+        echo "install packer"
+        apt update && apt install packer="${{ inputs.version }}"*
+        echo "unset proxy"
+        unset https_proxy
       shell: bash
 
-    - name: Remove proxy
-      shell: bash
-      run: unset https_proxy
+    # - name: Remove proxy
+    #   shell: bash
+    #   run: unset https_proxy
