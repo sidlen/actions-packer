@@ -1,0 +1,62 @@
+name: 'Publish autoinstall'
+description: 'Publish autoinstall user-data file and create env file for packer'
+author: 'sidlen'
+inputs:
+  repo_url:
+    description: 'gitea registry url, where stored user-data'
+    required: true
+    default: "${{ github.server_url }}"
+  repo_user:
+    description: 'user witn rw access to repo'
+    required: true
+    default: "${{ vars.REPO_USER }}"
+  repo_token:
+    description: 'user password or token'
+    required: true
+    default: "${{ secrets.REPO_TOKEN }}"
+  packer_variables_file_path:
+    description: 'File path to packer vars'
+    required: false
+    default: "${{ env.PACKER_VARS }}"
+  autoinstall_template_file_path:
+    description: 'File path to autoinstall template'
+    required: false
+    default: "${{ env.AUTOINSTALL_TEMPLATE }}"
+  pck_var_ssh_pwd:
+    description: 'User password for ssh access'
+    required: false
+    default: "${{ secrets.PKR_VAR_SSH_PASSWORD }}"
+  user_data:
+    description: 'File path to save rendered autoinstall file'
+    required: false
+    default: "user-data"
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare
+      shell: bash
+      run: |
+        export REF_NAME="${{ gitea.ref }}"
+        export REF="${REF_NAME#refs/tags/}"
+        export REF="${REF#refs/heads/}"
+        touch meta-data
+        echo "::set-output name=ref_tag::$REF"
+    - uses: ./generate_autoinstall/
+      id: generate_autoinstall
+      with:
+        packer_variables_file_path: "${{ inputs.packer_variables_file_path }}"
+        autoinstall_template_file_path: "${{ inputs.autoinstall_template_file_path }}"
+        pck_var_ssh_pwd: "${{ inputs.pck_var_ssh_pwd }}"
+        user_data: "${{ inputs.user_data }}"
+    - name: Set packer custom variables
+      shell: bash
+      run: |
+        export PKR_VAR_AUTOINSTALL_URL=$(echo ${{ inputs.repo_url }} | sed -E "s|^(https?://)|\1${{ inputs.repo_user }}:${{ inputs.repo_token }}@|")/api/packages/${{ github.repository_owner }}/generic/${{ steps.generate_autoinstall.outputs.firmware }}/$REF
+        export PKR_VAR_FIRMWARE=${{ steps.generate_autoinstall.outputs.firmware }}
+        export PKR_VAR_TAG=$REF
+        echo "::set-output name=autoinstall_url::$PKR_VAR_AUTOINSTALL_URL"
+    - name: publish
+      shell: bash
+      run: |
+        curl --user ${{ inputs.repo_user }}:${{ inputs.repo_token }} --upload-file user-data $PKR_VAR_AUTOINSTALL_URL/user-data
+        curl --user ${{ inputs.repo_user }}:${{ inputs.repo_token }} --upload-file meta-data $PKR_VAR_AUTOINSTALL_URL/meta-data

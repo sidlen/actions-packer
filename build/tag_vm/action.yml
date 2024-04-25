@@ -1,0 +1,51 @@
+name: 'Generate autoinstall'
+description: 'Generate user-data file for ubuntu autoinstall from variables file and template autoinstall file'
+author: 'sidlen'
+inputs:
+  packer_variables_file_path:
+    description: 'File path to packer vars'
+    required: true
+    default: "${{ env.PACKER_VARS }}"
+  pck_var_ssh_pwd:
+    description: 'User password for ssh access'
+    required: true
+    default: "${{ secrets.PKR_VAR_SSH_PASSWORD }}"
+  packer_output_file_path:
+    description: 'path to outputh file'
+    required: true
+    default: "manifest.json"
+  vault_url:
+    description: 'http/https vault url'
+    required: true
+    default: "${{ env.VAULT_URL }}"
+  vault_token:
+    description: 'vault token with rw access'
+    required: true
+    default: "${{ secrets.VAULT_TOKEN }}"
+  pkr_var_vcenter_password:
+    description: 'password for vsphere user, the user itself is specified in the packer variable file'
+    required: true
+    default: "${{ secrets.VSPHERE_PASSWORD }}"
+  notes_autoinstall_url:
+    description: 'url with user-data for build image'
+    required: false
+    default: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref }}"
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    PACKER_VARIABLES_FILE_PATH: "${{ inputs.packer_variables_file_path }}"
+    MANIFEST_FILE_PATH: "${{ inputs.packer_output_file_path }}"
+    PKR_VAR_SSH_PASSWORD: "${{ inputs.pck_var_ssh_pwd }}"
+    VAULT_URL: "${{ inputs.user-data }}"
+    VAULT_TOKEN: "${{ inputs.vault_token }}"
+    PKR_VAR_VCENTER_PASSWORD: "${{ inputs.pkr_var_vcenter_password }}"
+    NOTES_PROJECT_URL: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref }}"
+    NOTES_AUTOINSTALL_CONFIG_URL: "${{ inputs.notes_autoinstall_url }}"
+
+outputs:
+  result:
+    description: "user-data"
+  firmware:
+    description: "vm firmware"

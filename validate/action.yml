@@ -1,0 +1,15 @@
+name: 'Packer validate'
+description: 'Validate packer manifest files'
+author: 'sidlen'
+inputs:
+  manifest_path:
+    description: 'Realative path to directory with packer manifests files, default - env.PKR_VAR_MANIFEST_DIR'
+    required: true
+    default: "${{ env.PKR_VAR_MANIFEST_DIR }}"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate packer manifest 
+      shell: bash
+      run: packer validate "${{ inputs.manifest_path }}"/

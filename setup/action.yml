@@ -1,0 +1,39 @@
+name: 'Install Packer'
+description: 'Downloads and install Packer'
+author: 'sidlen'
+inputs:
+  version:
+    description: 'Version of Packer to install'
+    required: true
+    default: '1.10.3'
+  proxy:
+    description: 'Proxy address string'
+    required: false
+    default: "${{ secrets.PROXY }}"
+  noproxy:
+    description: 'No proxy addresses and domains'
+    required: false
+    default: "${{ env.NOPROXY }}"
+runs:
+  using: 'composite'
+  steps:
+    - name: Set https proxy
+      shell: bash
+      run: |
+        export https_proxy="${{ inputs.proxy }}"
+        export no_proxy="${{ inputs.noproxy }}"
+
+    - name: Download gpg key and add apt repo
+      run: |
+        echo $(lsb_release -cs)
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+      shell: bash
+
+    - name: Install Packer
+      run: apt update && apt install packer="${{ inputs.version }}"*
+      shell: bash
+
+    - name: Remove proxy
+      shell: bash
+      run: unset https_proxy

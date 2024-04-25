@@ -1,0 +1,35 @@
+name: 'Generate autoinstall'
+description: 'Generate user-data file for ubuntu autoinstall from variables file and template autoinstall file'
+author: 'sidlen'
+inputs:
+  packer_variables_file_path:
+    description: 'File path to packer vars'
+    required: true
+    default: "${{ env.PACKER_VARS }}"
+  autoinstall_template_file_path:
+    description: 'File path to autoinstall template'
+    required: true
+    default: "${{ env.AUTOINSTALL_TEMPLATE }}"
+  pck_var_ssh_pwd:
+    description: 'User password for ssh access'
+    required: true
+    default: "${{ secrets.PKR_VAR_SSH_PASSWORD }}"
+  user_data:
+    description: 'File path to save rendered autoinstall file'
+    required: false
+    default: "user-data"
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    PACKER_VARIABLES_FILE_PATH: "${{ inputs.packer_variables_file_path }}"
+    AUTOINSTALL_TEMPLATE_FILE_PATH: "${{ inputs.autoinstall_template_file_path }}"
+    PKR_VAR_SSH_PASSWORD: "${{ inputs.pck_var_ssh_pwd }}"
+    USER_DATA: "${{ inputs.user-data }}"
+
+outputs:
+  result:
+    description: "user-data"
+  firmware:
+    description: "vm firmware"

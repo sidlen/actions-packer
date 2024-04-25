@@ -1,0 +1,15 @@
+name: 'Packer init'
+description: 'Init packer manifest'
+author: 'sidlen'
+inputs:
+  manifest_path:
+    description: 'Realative path to directory with packer manifests files, default - env.PKR_VAR_MANIFEST_DIR'
+    required: true
+    default: "${{ env.PKR_VAR_MANIFEST_DIR }}"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Init packer manifest 
+      shell: bash
+      run: packer init "${{ inputs.manifest_path }}"/

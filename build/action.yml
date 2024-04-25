@@ -1,0 +1,52 @@
+name: 'Packer build'
+description: 'Build image by packer'
+author: 'sidlen'
+inputs:
+  manifest_path:
+    description: 'Realative path to directory with packer manifests files, default - env.PKR_VAR_MANIFEST_DIR'
+    required: true
+    default: "${{ env.PKR_VAR_MANIFEST_DIR }}"
+  pkr_var_vcenter_password:
+    description: 'password for vsphere user, the user itself is specified in the packer variable file'
+    required: true
+    default: "${{ secrets.VSPHERE_PASSWORD }}"
+  packer_variables_file_path:
+    description: 'File path to packer vars'
+    required: false
+    default: "${{ env.PACKER_VARS }}"
+  pck_var_ssh_pwd:
+    description: 'User password for ssh access'
+    required: true
+    default: "${{ secrets.PKR_VAR_SSH_PASSWORD }}"
+  packer_output_file_path:
+    description: 'path to outputh file'
+    required: false
+    default: "manifest.json"
+  vault_url:
+    description: 'http/https vault url'
+    required: false
+    default: "${{ env.VAULT_URL }}"
+  vault_token:
+    description: 'vault token with rw access'
+    required: false
+    default: "${{ secrets.VAULT_TOKEN }}"
+  notes_autoinstall_url:
+    description: 'url with user-data for build image'
+    required: false
+    default: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref }}"
+runs:
+  using: 'composite'
+  steps:
+    - name: Build packer manifest 
+      shell: bash
+      run: packer build "${{ inputs.manifest_path }}"/
+    - uses: ./tag_vm/
+      id: tag_vm
+      with:
+        packer_variables_file_path: "${{ inputs.packer_variables_file_path }}"
+        pck_var_ssh_pwd: "${{ inputs.pck_var_ssh_pwd }}"
+        packer_output_file_path: "${{ inputs.packer_output_file_path }}"
+        vault_url: "${{ inputs.vault_url }}"
+        vault_token: "${{ inputs.vault_token }}"
+        pkr_var_vcenter_password: "${{ inputs.pkr_var_vcenter_password }}"
+        notes_autoinstall_url: "${{ github.server_url }}/${{ github.repository }}/releases/tag/$REF"
